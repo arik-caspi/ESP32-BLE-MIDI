@@ -1,8 +1,5 @@
 #include "BLEMidiClient.h"
 
-static bool isDataReceived = false;
-static String strData;
-
 void BLEMidiClientClass::begin(const std::string deviceName, const std::string deviceToLook)
 {
     BLEMidi::begin(deviceName);
@@ -48,27 +45,6 @@ BLEAdvertisedDevice* BLEMidiClientClass::getScannedDevice(uint32_t deviceIndex)
     return &foundMidiDevices.at(deviceIndex);
 }
 
-static void notifyCallback(
-  BLERemoteCharacteristic* pBLERemoteCharacteristic,
-  uint8_t* pData,
-  size_t length,
-  bool isNotify)
-{
-    strData.reserve(length);
-    for(int i=0; i<length; i++){
-      strData +=(char)pData[i];
-    }
-    
-    /* if (length < BLE_MAX_PACKET_LEN)
-    {
-        memcpy(incomingData, pData, length);
-        dataLength = length;
-       
-    } */
-
-    isDataReceived = true;
-}
-
 void BLEMidiClientClass::readRcvPackets()
 {
     if (isDataReceived)
@@ -110,7 +86,11 @@ bool BLEMidiClientClass::connect(uint32_t deviceIndex)
     }
     debug.println("Registering characteristic callback");
     if(pRemoteCharacteristic->canNotify()) {                                                                        
-        pRemoteCharacteristic->registerForNotify(notifyCallback);
+         pRemoteCharacteristic->registerForNotify([](BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify){
+            BLEMidiClient.receivePacket(pData, length); // We call the member function of the only instantiated class.
+            vTaskDelay(0);      // We leave some time for the IDLE task call esp_task_wdt_reset_watchdog
+                                // See comment from atanisoft here : https://github.com/espressif/arduino-esp32/issues/2493
+        });
     }
     connected=true;
     return true;
