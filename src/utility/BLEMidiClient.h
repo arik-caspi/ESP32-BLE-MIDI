@@ -23,8 +23,6 @@ public:
     void setOnConnectCallback(void (*const onConnectCallback)());
     void setOnDisconnectCallback(void (*const onDisconnectCallback)());
 
-    void readRcvPackets();
-
 private:
     /// This method is called by the base Midi class to send packets.
     virtual void sendPacket(uint8_t *packet, uint8_t packetSize) override;

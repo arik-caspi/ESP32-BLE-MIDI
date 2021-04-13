@@ -45,17 +45,6 @@ BLEAdvertisedDevice* BLEMidiClientClass::getScannedDevice(uint32_t deviceIndex)
     return &foundMidiDevices.at(deviceIndex);
 }
 
-void BLEMidiClientClass::readRcvPackets()
-{
-    if (isDataReceived)
-    {
-        BLEMidiClient.receivePacket((uint8_t *)(strData.c_str()), strData.length());
-        strData.clear();
-
-        isDataReceived = false;
-    }
-}
-
 bool BLEMidiClientClass::connect(uint32_t deviceIndex)
 {
     debug.printf("Connecting to device number %d\n", deviceIndex);
