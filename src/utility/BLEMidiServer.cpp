@@ -1,10 +1,10 @@
 #include "BLEMidiServer.h"
 
-void BLEMidiServerClass::begin(const std::string deviceName)
+void BLEMidiServerClass::begin(const std::string deviceName, const std::string peerName)
 {
     BLEMidi::begin(deviceName);
     BLEServer *pServer = BLEDevice::createServer();
-    pServer->setCallbacks(this);
+    pServer->setCallbacks(new MyServerCallbacks(&connected, onConnectCallback, onDisconnectCallback));
     BLEService *pService = pServer->createService(BLEUUID(MIDI_SERVICE_UUID));
     pCharacteristic = pService->createCharacteristic(
         BLEUUID(MIDI_CHARACTERISTIC_UUID),
@@ -39,19 +39,28 @@ void BLEMidiServerClass::sendPacket(uint8_t *packet, uint8_t packetSize)
     pCharacteristic->notify();
 }
 
-void BLEMidiServerClass::onConnect(BLEServer* pServer)
-{
-    connected = true;
+MyServerCallbacks::MyServerCallbacks(
+    bool *connected, 
+    void (*const onConnectCallback)(),
+    void (*const onDisconnectCallback)()
+) : connected(connected),
+    onConnectCallback(onConnectCallback),
+    onDisconnectCallback(onDisconnectCallback)
+{}
+
+void MyServerCallbacks::onConnect(BLEServer* pServer) {
+    *connected = true;
     if(onConnectCallback != nullptr)
         onConnectCallback();
-}
+};
 
-void BLEMidiServerClass::onDisconnect(BLEServer* pServer)
-{
-    connected = false;
+void MyServerCallbacks::onDisconnect(BLEServer* pServer) {
+    *connected = false;
     if(onDisconnectCallback != nullptr)
         onDisconnectCallback();
-    pServer->startAdvertising();
+    
+    BLEAdvertising *pAdvertising = pServer->getAdvertising();
+    pAdvertising->start();
 }
 
 CharacteristicCallback::CharacteristicCallback(std::function<void(uint8_t*, uint8_t)> onWriteCallback) : onWriteCallback(onWriteCallback) {}

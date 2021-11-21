@@ -3,24 +3,40 @@
 
 #include "BLEMidiBase.h"
 
-
-class BLEMidiServerClass : public BLEMidi, public BLEServerCallbacks {
+class BLEMidiServerClass : public BLEMidi {
 public:
-    void begin(const std::string deviceName);
+    void begin(const std::string deviceName, const std::string peerName="");
 
     void setOnConnectCallback(void (*const onConnectCallback)());
     void setOnDisconnectCallback(void (*const onDisconnectCallback)());
     
-    
 
 private:
     virtual void sendPacket(uint8_t *packet, uint8_t packetSize) override;
-    void onConnect(BLEServer* pServer) override;
-    void onDisconnect(BLEServer* pServer) override;
     
     void (*onConnectCallback)() = nullptr;
     void (*onDisconnectCallback)() = nullptr;
-    BLECharacteristic* pCharacteristic = nullptr;
+    BLECharacteristic* pCharacteristic;
+};
+
+
+class MyServerCallbacks: public BLEServerCallbacks {
+
+    void onConnect(BLEServer* pServer);
+    void onDisconnect(BLEServer* pServer);
+
+public:
+    MyServerCallbacks(
+        bool *connected, 
+        void (*const onConnectCallback)(),
+        void (*const onDisconnectCallback)()
+    );
+
+private:
+    bool *connected;
+    void (*const onConnectCallback)();
+    void (*const onDisconnectCallback)();
+    BLECharacteristic *pCharacteristic;
 };
 
 
